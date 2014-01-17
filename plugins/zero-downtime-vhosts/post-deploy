@@ -23,10 +23,11 @@ if [[ -f "$DOKKU_ROOT/VHOST" ]]; then
 
   echo "Waiting for new container to boot on $PORT..."
 
+  set +e
   i=0
   while [ $i -le "60" ]
   do
-    curl -m 1 "http://127.0.0.1:$PORT"
+    curl -s -m 1 "http://127.0.0.1:$PORT"
     if [ "$?" == "0" ]
     then
       echo "Found new app after $i tries"
@@ -37,17 +38,10 @@ if [[ -f "$DOKKU_ROOT/VHOST" ]]; then
     sleep 1
     i=$(($i+1))
   done
+  set -e
 
-  if [ "$FOUND_APP" == "true" ]
+  if [ "$FOUND_APP" == "" ]
   then
-    # kill the old app when running
-    if [[ -f "$DOKKU_ROOT/$APP/OLD_CONTAINER" ]]; then
-      oldid=$(< "$DOKKU_ROOT/$APP/OLD_CONTAINER")
-      rm "$DOKKU_ROOT/$APP/OLD_CONTAINER"
-      docker kill $oldid > /dev/null 2>&1 || true
-    fi
-
-  else
     echo "Something is wrong... you probably have multiple containers running now. Login and clean this up."
     exit 100
   fi
@@ -117,5 +111,14 @@ EOF
 
   pluginhook nginx-pre-reload $APP
   sudo /etc/init.d/nginx reload > /dev/null
+
+  # kill the old app when running
+  if [[ -f "$DOKKU_ROOT/$APP/OLD_PORT" ]]; then
+    oldid=$(< "$DOKKU_ROOT/$APP/OLD_CONTAINER")
+    rm "$DOKKU_ROOT/$APP/OLD_PORT"
+    rm "$DOKKU_ROOT/$APP/OLD_CONTAINER"
+    docker kill $oldid > /dev/null 2>&1 || true
+  fi
+
 
 fi
