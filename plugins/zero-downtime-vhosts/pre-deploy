@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Prevent the current container from being killed... 
+if [[ -f "$DOKKU_ROOT/$APP/CONTAINER" ]]; then
+  echo "Preventing the current container from being killed..."
+  mv "$DOKKU_ROOT/$APP/CONTAINER" "$DOKKU_ROOT/$APP/OLD_CONTAINER"
+fi
